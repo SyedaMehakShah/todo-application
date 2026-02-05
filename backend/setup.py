@@ -1,0 +1,25 @@
+from setuptools import setup, find_packages
+
+setup(
+    name="todo-backend",
+    version="1.0.0",
+    packages=find_packages(),
+    install_requires=[
+        "fastapi>=0.109.0",
+        "sqlmodel>=0.0.14",
+        "uvicorn[standard]>=0.27.0",
+        "python-jose[cryptography]>=3.3.0",
+        "passlib[bcrypt]>=1.7.4",
+        "alembic>=1.13.1",
+        "asyncpg>=0.29.0",
+        "pydantic>=2.5.3",
+        "pydantic-settings>=2.1.0",
+        "python-multipart>=0.0.6",
+        "email-validator>=2.1.0",
+        "slowapi>=0.1.9",
+        "bleach>=6.1.0"
+    ],
+    author="Todo App Developer",
+    description="A FastAPI backend for the Todo application",
+    python_requires=">=3.10",
+)
