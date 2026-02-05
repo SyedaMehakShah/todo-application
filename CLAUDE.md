@@ -1,4 +1,4 @@
-# Claude Code Rules
+﻿# Claude Code Rules
 
 This file is generated during init for the selected agent.
 
@@ -106,7 +106,37 @@ After completing requests, you **MUST** create a PHR (Prompt History Record).
   "📋 Architectural decision detected: <brief> — Document reasoning and tradeoffs? Run `/sp.adr <decision-title>`"
 - Wait for user consent; never auto‑create the ADR.
 
-### 5. Human as Tool Strategy
+### 5. Mandatory Agent and Skill Usage
+You MUST use specialized agents and skills for domain-specific tasks. NEVER implement features directly without invoking the appropriate agent or skill first.
+
+**Required Agent/Skill Mapping:**
+
+| Task Type | Required Agent/Skill | When to Use |
+|-----------|---------------------|-------------|
+| **Authentication/Authorization** | `auth-skill` or `auth-security-reviewer` | Any signup, signin, password handling, JWT tokens, session management, or security-sensitive user data |
+| **Frontend Development** | `frontend-skill` | Building pages, components, layouts, styling, responsive UI |
+| **Backend Development** | `backend-skill` | API routes, request/response handling, server-side logic, database connections |
+| **Database Design** | `database-schema` | Schema design, table creation, migrations, data modeling |
+| **Code Review** | `code-reviewer` | After implementing features, refactoring, or when code needs quality/security review |
+| **Security Review** | `auth-security-reviewer` | After implementing auth/security code, before deployment of sensitive features |
+| **Planning** | `Plan` agent (Task tool) | Designing implementation strategies, architectural decisions |
+| **Exploration** | `Explore` agent (Task tool) | Understanding codebase structure, finding files, searching code |
+
+**Enforcement Rules:**
+1. **Before Implementation:** Always invoke the appropriate skill/agent BEFORE writing code for that domain
+2. **After Implementation:** Always invoke review agents (code-reviewer, auth-security-reviewer) AFTER completing implementation
+3. **No Direct Implementation:** NEVER directly implement authentication, frontend, backend, or database features without using the corresponding skill
+4. **Skill Invocation:** Use the `Skill` tool with the skill name (e.g., `Skill(skill="auth-skill")`)
+5. **Agent Invocation:** Use the `Task` tool with appropriate subagent_type (e.g., `Task(subagent_type="Explore")`)
+
+**Example Workflow:**
+```
+User: "Implement user authentication with JWT"
+✅ CORRECT: Invoke auth-skill → Follow skill guidance → Invoke auth-security-reviewer
+❌ WRONG: Directly write authentication code without using auth-skill
+```
+
+### 6. Human as Tool Strategy
 You are not expected to solve every problem autonomously. You MUST invoke the user for input when you encounter situations that require human judgment. Treat the user as a specialized tool for clarification and decision-making.
 
 **Invocation Triggers:**
@@ -208,3 +238,70 @@ Wait for consent; never auto-create ADRs. Group related decisions (stacks, authe
 
 ## Code Standards
 See `.specify/memory/constitution.md` for code quality, testing, performance, security, and architecture principles.
+Phase II: Todo Full-Stack Web Application
+Basic Level Functionality
+Objective: Using Claude Code and Spec-Kit Plus transform the console app into a modern multi-user web application with persistent storage.
+💡Development Approach: Use the Agentic Dev Stack workflow: Write spec → Generate plan → Break into tasks → Implement via Claude Code. No manual coding allowed. We will review the process, prompts, and iterations to judge each phase and project.
+Requirements
+Implement all 5 Basic Level features as a web application
+Create RESTful API endpoints
+Build responsive frontend interface
+Store data in Neon Serverless PostgreSQL database
+Authentication – Implement user signup/signin using Better Auth
+Technology Stack
+Layer
+Technology
+Frontend
+Next.js 16+ (App Router)
+Backend
+Python FastAPI
+ORM
+SQLModel
+Database
+Neon Serverless PostgreSQL
+Spec-Driven
+Claude Code + Spec-Kit Plus
+Authentication
+Better Auth
+
+How It Works
+User logs in on Frontend → Better Auth creates a session and issues a JWT token
+Frontend makes API call → Includes the JWT token in the Authorization: Bearer <token> header
+Backend receives request → Extracts token from header, verifies signature using shared secret
+Backend identifies user → Decodes token to get user ID, email, etc. and matches it with the user ID in the URL
+Backend filters data → Returns only tasks belonging to that user
+What Needs to Change
+Component
+Changes Required
+Better Auth Config
+Enable JWT plugin to issue tokens
+Frontend API Client
+Attach JWT token to every API request header
+FastAPI Backend
+Add middleware to verify JWT and extract user
+API Routes
+Filter all queries by the authenticated user's ID
+
+The Shared Secret
+Both frontend (Better Auth) and backend (FastAPI) must use the same secret key for JWT signing and verification. This is typically set via environment variable BETTER_AUTH_SECRET in both services.
+Security Benefits
+Benefit
+Description
+User Isolation
+Each user only sees their own tasks
+Stateless Auth
+Backend doesn't need to call frontend to verify users
+Token Expiry
+JWTs expire automatically (e.g., after 7 days)
+No Shared DB Session
+Frontend and backend can verify auth independently
+
+API Behavior Change
+After Auth:
+All endpoints require valid JWT token
+Requests without token receive 401 Unauthorized
+Each user only sees/modifies their own tasks
+Task ownership is enforced on every operation
+
+Bottom Line
+The REST API endpoints stay the same (GET /api/user_id/tasks, POST /api/user_id/tasks, etc.), but every request now must include a JWT token, and all responses are filtered to only include that user's data.
